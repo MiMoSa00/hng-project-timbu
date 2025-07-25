@@ -18,8 +18,9 @@ export default function ProductGrid() {
 
   useEffect(() => {
     const checkScreenSize = () => {
-      setIsMobile(window.innerWidth < 640)
-      setVisibleCount(window.innerWidth < 640 ? 4 : 6)
+      const width = window.innerWidth
+      setIsMobile(width < 640)
+      setVisibleCount(width < 640 ? 4 : 6)
     }
 
     checkScreenSize()
@@ -28,13 +29,11 @@ export default function ProductGrid() {
   }, [])
 
   useEffect(() => {
-    const observers: IntersectionObserver[] = []
-
     const cardObserver = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           const cardIndex = parseInt(entry.target.getAttribute('data-index') || '0')
-          setVisibleCards(prev => new Set([...prev, cardIndex]))
+          setVisibleCards((prev) => new Set([...prev, cardIndex]))
         }
       })
     }, { threshold: 0.1, rootMargin: '50px' })
@@ -47,17 +46,16 @@ export default function ProductGrid() {
       if (card) {
         card.setAttribute('data-index', index.toString())
         cardObserver.observe(card)
-        observers.push(cardObserver)
       }
     })
 
     if (loadMoreRef.current) {
       loadMoreObserver.observe(loadMoreRef.current)
-      observers.push(loadMoreObserver)
     }
 
     return () => {
-      observers.forEach(observer => observer.disconnect())
+      cardObserver.disconnect()
+      loadMoreObserver.disconnect()
     }
   }, [visibleCount])
 
@@ -82,12 +80,13 @@ export default function ProductGrid() {
 
   const loadMore = () => {
     const increment = isMobile ? 4 : 8
-    setVisibleCount(prev => Math.min(prev + increment, products.length))
+    setVisibleCount((prev) => Math.min(prev + increment, products.length))
   }
 
   const handleAddToCart = (product: any) => {
     addToCart({ id: product.id, name: product.name, price: product.price, image: product.image, quantity: 1 })
     setAddedToCart(prev => new Set([...prev, product.id]))
+
     setTimeout(() => {
       setAddedToCart(prev => {
         const newSet = new Set(prev)
@@ -109,23 +108,23 @@ export default function ProductGrid() {
           }
         }
 
-        .bounce-slow {
-          animation: bounceSlow 2s infinite;
-        }
-
         @keyframes slideFadeIn {
-          0% {
+          from {
             opacity: 0;
-            transform: translateY(20px);
+            transform: translateY(30px);
           }
-          100% {
+          to {
             opacity: 1;
             transform: translateY(0);
           }
         }
 
         .card-animate {
-          animation: slideFadeIn 0.8s ease-out forwards;
+          animation: slideFadeIn 0.6s ease-out forwards;
+        }
+
+        .bounce-slow {
+          animation: bounceSlow 2.5s infinite;
         }
       `}</style>
 
@@ -138,8 +137,8 @@ export default function ProductGrid() {
             <div
               key={product.id}
               ref={(el) => { cardRefs.current[index] = el }}
-              className={`border p-2 bg-white opacity-0 transform scale-95 transition-all duration-700 ease-out ${
-                visibleCards.has(index) ? 'card-animate' : ''
+              className={`border p-2 bg-white transform scale-95 transition-all duration-700 ease-out ${
+                visibleCards.has(index) ? 'opacity-100 scale-100 card-animate' : 'opacity-0'
               }`}
             >
               <div className="relative aspect-[3/4] bg-gray-100 overflow-hidden group">
@@ -162,12 +161,10 @@ export default function ProductGrid() {
           ))}
         </div>
 
-        {/* Tracker Text */}
         <p className="text-center text-sm text-gray-500 mt-6">
           You’ve viewed {visibleCount} of {products.length} products
         </p>
 
-        {/* Load More Button */}
         <div ref={loadMoreRef} className="text-center mt-6">
           <button
             onClick={hasMoreProducts ? loadMore : undefined}
