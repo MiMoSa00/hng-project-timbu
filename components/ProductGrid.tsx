@@ -1,11 +1,16 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { ShoppingBag } from 'lucide-react'
 import { useCart } from '@/components/CartContext'
 
-export default function ProductGrid() {
+type ProductGridProps = {
+  activeTab: 'men' | 'women'
+  activeCategory: string
+}
+
+const ProductGrid: React.FC<ProductGridProps> = ({ activeTab, activeCategory }) => {
   const [visibleCount, setVisibleCount] = useState(8)
   const [isMobile, setIsMobile] = useState(false)
   const [visibleCards, setVisibleCards] = useState<Set<number>>(new Set())
@@ -16,6 +21,7 @@ export default function ProductGrid() {
 
   const { addToCart } = useCart()
 
+  // Screen size handling
   useEffect(() => {
     const checkScreenSize = () => {
       const width = window.innerWidth
@@ -28,6 +34,7 @@ export default function ProductGrid() {
     return () => window.removeEventListener('resize', checkScreenSize)
   }, [])
 
+  // Animate cards and load more visibility
   useEffect(() => {
     const cardObserver = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
@@ -59,28 +66,38 @@ export default function ProductGrid() {
     }
   }, [visibleCount])
 
-  const products = [
-    { id: "men_1", name: "Reclaimed Vintage men loose fit jean", description: "W34 L42", price: 4000, image: "/images/img12.png" },
-    { id: "men_2", name: "Plain Grey Unisex Hoodie", description: "All sizes", price: 8500, image: "/images/img8.png" },
-    { id: "men_3", name: "Reclaimed Vintage trousers black", description: "W34 L42", price: 4500, image: "/images/img13.png" },
-    { id: "men_4", name: "Men's Round Neck T-Shirt", description: "All sizes", price: 8000, image: "/images/img6.png" },
-    { id: "men_5", name: "Dark Grey Summer Shorts", description: "All sizes", price: 5000, image: "/images/img7.png" },
-    { id: "men_6", name: "Osc Signature Long Sleeve T-Shirts", description: "All sizes", price: 8000, image: "/images/img9.png" },
-    { id: "men_7", name: "Men's Corporate Suit", description: "All sizes", price: 42000, image: "/images/img10.png" },
-    { id: "men_8", name: "Sky Stock Blue Jean", description: "All sizes", price: 14500, image: "/images/img12.png" },
-  ]
-
-  const displayedProducts = products.slice(0, visibleCount)
-  const hasMoreProducts = visibleCount < products.length
-
+  // Reset animation and ref tracking
   useEffect(() => {
     setVisibleCards(new Set())
     cardRefs.current = []
-  }, [visibleCount])
+  }, [visibleCount, activeTab, activeCategory])
+
+  const allProducts = [
+    // Men
+    { id: "men_1", name: "Reclaimed Vintage men loose fit jean", description: "W34 L42", price: 4000, image: "/images/img12.png", category: "jeans" },
+    { id: "men_2", name: "Plain Grey Unisex Hoodie", description: "All sizes", price: 8500, image: "/images/img8.png", category: "hoodies" },
+    { id: "men_3", name: "Reclaimed Vintage trousers black", description: "W34 L42", price: 4500, image: "/images/img13.png", category: "pants" },
+    { id: "men_4", name: "Men's Round Neck T-Shirt", description: "All sizes", price: 8000, image: "/images/img6.png", category: "tshirts" },
+    { id: "men_5", name: "Dark Grey Summer Shorts", description: "All sizes", price: 5000, image: "/images/img7.png", category: "shorts" },
+    { id: "men_6", name: "Osc Signature Long Sleeve T-Shirts", description: "All sizes", price: 8000, image: "/images/img9.png", category: "tshirts" },
+    { id: "men_7", name: "Men's Corporate Suit", description: "All sizes", price: 42000, image: "/images/img10.png", category: "suits" },
+    { id: "men_8", name: "Sky Stock Blue Jean", description: "All sizes", price: 14500, image: "/images/img12.png", category: "jeans" },
+
+    // Women (sample)
+    { id: "women_1", name: "Women's Pink Hoodie", description: "All sizes", price: 9500, image: "/images/img8.png", category: "hoodies" },
+    { id: "women_2", name: "Elegant Summer Dress", description: "All sizes", price: 15000, image: "/images/img13.png", category: "dresses" },
+  ]
+
+  const filteredProducts = allProducts.filter(p => 
+    p.id.startsWith(activeTab) && (activeCategory === 'all' || p.category === activeCategory)
+  )
+
+  const displayedProducts = filteredProducts.slice(0, visibleCount)
+  const hasMoreProducts = visibleCount < filteredProducts.length
 
   const loadMore = () => {
     const increment = isMobile ? 4 : 8
-    setVisibleCount((prev) => Math.min(prev + increment, products.length))
+    setVisibleCount(prev => Math.min(prev + increment, filteredProducts.length))
   }
 
   const handleAddToCart = (product: any) => {
@@ -129,8 +146,10 @@ export default function ProductGrid() {
       `}</style>
 
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold mb-2">Men's Collection</h1>
-        <p className="text-gray-600 mb-6">{products.length} items</p>
+        <h1 className="text-2xl font-bold mb-2 capitalize">
+          {activeTab === 'men' ? "Men's Collection" : "Women's Collection"}
+        </h1>
+        <p className="text-gray-600 mb-6">{filteredProducts.length} items</p>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {displayedProducts.map((product, index) => (
@@ -162,7 +181,7 @@ export default function ProductGrid() {
         </div>
 
         <p className="text-center text-sm text-gray-500 mt-6">
-          You’ve viewed {visibleCount} of {products.length} products
+          You’ve viewed {displayedProducts.length} of {filteredProducts.length} products
         </p>
 
         <div ref={loadMoreRef} className="text-center mt-6">
@@ -178,3 +197,5 @@ export default function ProductGrid() {
     </section>
   )
 }
+
+export default ProductGrid

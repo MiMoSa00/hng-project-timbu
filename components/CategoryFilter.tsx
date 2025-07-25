@@ -98,7 +98,7 @@ export default function CategoryFilter({
             )}
           >
             <Filter size={16} className="transition-transform duration-200" />
-            Filters & Categories
+            Filters 
             <div className="transition-transform duration-200">
               {isMenuOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </div>
